@@ -11,10 +11,11 @@
 #endif
 
 /* Struktura tworząca elementy listy, w ktorych zapisuje numer kolumny
- * zywej/martwej komorki, oraz ile ma sasiadow - jesli wiecej niz 10 tzn. ze w
- * aktualnej generacji jest zywa, jesli mniej niz 10 tzn. ze jest to komorka
- * ktora potencjalnie moze sie odrodzic. Ilosc sasiadiow do odpowiednio dla
- * zywych ileSasiadow - 10, a w martwych po prostu ileSasiadow */
+ * zywej/martwej komorki, oraz ile ma sasiadow - jesli wiecej niz 10 tzn. ze
+ * w aktualnej generacji jest zywa, jesli mniej niz 10 tzn. ze jest to
+ * komorka ktora potencjalnie moze sie odrodzic. Ilosc sasiadiow do
+ * odpowiednio dla zywych ileSasiadow - 10, a w martwych po prostu
+ * ileSasiadow */
 typedef struct Kom {
   int kolumna;
   int ileSasiadow;
@@ -35,15 +36,6 @@ typedef struct KomWiersz {
 /**
  * Skanuje tablice.
  **/
-void printList(Kom *head) {
-  if (head == NULL)
-    return;
-  while (head != NULL) {
-    printf("%d ", head->ileSasiadow);
-    head = head->next;
-  }
-  printf("\n");
-}
 
 KomWiersz *skanujTablice(void) {
   KomWiersz *listaKomorek = NULL;
@@ -156,60 +148,102 @@ void zwolnijPamiec(KomWiersz *listaKomorekHead) {
  * Tworzenie kolejnej generacji
  */
 
+void dodajMartweNaKoncu(Kom *akt, Kom *ostatni) {
+  while (akt != NULL) {
+    if (akt->ileSasiadow >= 10) {
+      if (akt->kolumna == ostatni->kolumna) {
+        Kom *nowyKom = malloc(sizeof(Kom));
+        nowyKom->kolumna = akt->kolumna + 1;
+        nowyKom->ileSasiadow = 0;
+        nowyKom->next = NULL;
+        ostatni->next = nowyKom;
+        ostatni = nowyKom;
+      } else if (akt->kolumna == ostatni->kolumna + 1) {
+        Kom *nowyKom1 = malloc(sizeof(Kom));
+        Kom *nowyKom2 = malloc(sizeof(Kom));
+        nowyKom1->kolumna = akt->kolumna;
+        nowyKom2->kolumna = akt->kolumna + 1;
+        nowyKom1->ileSasiadow = 0;
+        nowyKom2->ileSasiadow = 0;
+        nowyKom1->next = nowyKom2;
+        nowyKom2->next = NULL;
+        ostatni->next = nowyKom1;
+        ostatni = nowyKom2;
+      } else if (akt->kolumna > ostatni->kolumna + 1) {
+        Kom *nowyKom1 = malloc(sizeof(Kom));
+        Kom *nowyKom2 = malloc(sizeof(Kom));
+        Kom *nowyKom3 = malloc(sizeof(Kom));
+        nowyKom1->kolumna = akt->kolumna - 1;
+        nowyKom2->kolumna = akt->kolumna;
+        nowyKom3->kolumna = akt->kolumna + 1;
+        nowyKom1->ileSasiadow = 0;
+        nowyKom2->ileSasiadow = 0;
+        nowyKom3->ileSasiadow = 0;
+        nowyKom1->next = nowyKom2;
+        nowyKom2->next = nowyKom3;
+        nowyKom3->next = NULL;
+        ostatni->next = nowyKom1;
+        ostatni = nowyKom3;
+      }
+    }
+    akt = akt->next;
+  }
+}
+
 void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
   if (wierszHead == NULL || kom1 == NULL || kom2 == NULL)
     return;
   Kom *przedostatni = kom2;
   Kom *ostatni = kom2->next;
   Kom *akt = kom1;
+  if (akt == NULL)
+    return;
   while (akt != NULL && akt->ileSasiadow < 10) {
+    akt = akt->next;
+  }
+  int roznica = przedostatni->kolumna - akt->kolumna;
+  if (akt->kolumna < przedostatni->kolumna) {
+    if (roznica > 1) {
+      Kom *nowyKom1 = malloc(sizeof(Kom));
+      Kom *nowyKom2 = malloc(sizeof(Kom));
+      Kom *nowyKom3 = malloc(sizeof(Kom));
+      wierszHead->nextKom = nowyKom1;
+      nowyKom1->next = nowyKom2;
+      nowyKom2->next = nowyKom3;
+      nowyKom3->next = przedostatni;
+      nowyKom1->kolumna = akt->kolumna - 1;
+      nowyKom2->kolumna = akt->kolumna;
+      nowyKom3->kolumna = akt->kolumna + 1;
+      nowyKom1->ileSasiadow = 0;
+      nowyKom2->ileSasiadow = 0;
+      nowyKom3->ileSasiadow = 0;
+      przedostatni = nowyKom1;
+      ostatni = przedostatni->next;
+    } else if (roznica == 1) {
+      Kom *nowyKom1 = malloc(sizeof(Kom));
+      Kom *nowyKom2 = malloc(sizeof(Kom));
+      wierszHead->nextKom = nowyKom1;
+      nowyKom1->next = nowyKom2;
+      nowyKom2->next = przedostatni;
+      nowyKom1->kolumna = akt->kolumna - 1;
+      nowyKom2->kolumna = akt->kolumna;
+      nowyKom1->ileSasiadow = 0;
+      nowyKom2->ileSasiadow = 0;
+      przedostatni = nowyKom1;
+      ostatni = przedostatni->next;
+    } else {
+      Kom *nowyKom1 = malloc(sizeof(Kom));
+      wierszHead->nextKom = nowyKom1;
+      nowyKom1->next = przedostatni;
+      nowyKom1->kolumna = akt->kolumna - 1;
+      nowyKom1->ileSasiadow = 0;
+      przedostatni = nowyKom1;
+      ostatni = przedostatni->next;
+    }
     akt = akt->next;
   }
   if (akt == NULL)
     return;
-  // while (akt != NULL && akt->kolumna < przedostatni->kolumna + 1) {
-  //   if (akt->kolumna < przedostatni->kolumna + 1) {
-  //     int roznica = przedostatni->kolumna - akt->kolumna;
-  //     if (roznica > 1) {
-  //       Kom *nowyKom1 = malloc(sizeof(Kom));
-  //       Kom *nowyKom2 = malloc(sizeof(Kom));
-  //       Kom *nowyKom3 = malloc(sizeof(Kom));
-  //       wierszHead->nextKom = nowyKom1;
-  //       nowyKom1->next = nowyKom2;
-  //       nowyKom2->next = nowyKom3;
-  //       nowyKom3->next = przedostatni;
-  //       nowyKom1->kolumna = akt->kolumna - 1;
-  //       nowyKom2->kolumna = akt->kolumna;
-  //       nowyKom3->kolumna = akt->kolumna + 1;
-  //       nowyKom1->ileSasiadow = 0;
-  //       nowyKom2->ileSasiadow = 0;
-  //       nowyKom3->ileSasiadow = 0;
-  //     } else if (roznica == 1) {
-  //       Kom *nowyKom1 = malloc(sizeof(Kom));
-  //       Kom *nowyKom2 = malloc(sizeof(Kom));
-  //       wierszHead->nextKom = nowyKom1;
-  //       nowyKom1->next = nowyKom2;
-  //       nowyKom2->next = przedostatni;
-  //       nowyKom1->kolumna = akt->kolumna - 1;
-  //       nowyKom2->kolumna = akt->kolumna;
-  //       nowyKom1->ileSasiadow = 0;
-  //       nowyKom2->ileSasiadow = 0;
-  //     } else {
-  //       Kom *nowyKom1 = malloc(sizeof(Kom));
-  //       wierszHead->nextKom = nowyKom1;
-  //       nowyKom1->next = przedostatni;
-  //       nowyKom1->kolumna = akt->kolumna - 1;
-  //       nowyKom1->ileSasiadow = 0;
-  //     }
-  //   }
-  //   akt = akt->next;
-  // }
-  // while (akt != NULL && akt->ileSasiadow < 10) {
-  //   akt = akt->next;
-  // }
-  if (akt == NULL)
-    return;
-  int roznica = ostatni->kolumna - przedostatni->kolumna;
   while (akt != NULL && ostatni != NULL) {
     if (akt->ileSasiadow >= 10) {
       roznica = ostatni->kolumna - przedostatni->kolumna;
@@ -218,7 +252,7 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
             akt->kolumna <= ostatni->kolumna) {
           if (akt->kolumna == przedostatni->kolumna || roznica == 2) {
             Kom *nowyKom = malloc(sizeof(Kom));
-            nowyKom->kolumna = akt->kolumna + 1;
+            nowyKom->kolumna = przedostatni->kolumna + 1;
             nowyKom->ileSasiadow = 0;
             nowyKom->next = ostatni;
             przedostatni->next = nowyKom;
@@ -265,7 +299,7 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
             nowyKom1->next = nowyKom2;
             nowyKom2->next = nowyKom3;
             nowyKom3->next = ostatni;
-            przedostatni->next = nowyKom1->next;
+            przedostatni->next = nowyKom1;
             przedostatni = nowyKom3;
           }
         } else if (akt->kolumna > ostatni->kolumna) {
@@ -282,49 +316,93 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
       akt = akt->next;
     }
   }
+  if (akt != NULL)
+    dodajMartweNaKoncu(akt, przedostatni);
 }
 
 /* Funkcja zliczająca sąsiadow wystepujacych w tym samym
    wierszu dla wszystkich komorek w tym wierszu */
-void zliczSasiadowWeWierszuAktualnym(Kom *pierwszyKom) {
+void zliczSasiadowWeWierszuAktualnym(Kom *pierwszyKom, KomWiersz *wierszHead) {
 
   if (pierwszyKom == NULL || pierwszyKom->next == NULL)
     return;
 
   Kom *akt = pierwszyKom;
   Kom *next = pierwszyKom->next;
-
+  if (akt->ileSasiadow >= 10) {
+    Kom *nowyKom = malloc(sizeof(Kom));
+    nowyKom->kolumna = akt->kolumna - 1;
+    nowyKom->ileSasiadow = 1;
+    nowyKom->next = akt;
+    wierszHead->nextKom = nowyKom;
+  }
   while (next != NULL) {
     if ((akt->kolumna + 1) == next->kolumna) {
-      (akt->ileSasiadow)++;
-      (next->ileSasiadow)++;
+      if (akt->ileSasiadow >= 10 && next->ileSasiadow >= 10) {
+        (akt->ileSasiadow)++;
+        (next->ileSasiadow)++;
+      } else if (akt->ileSasiadow >= 10) {
+        (next->ileSasiadow)++;
+      } else if (next->ileSasiadow >= 10) {
+        (akt->ileSasiadow)++;
+      }
     }
     if ((akt->kolumna + 2) == next->kolumna) {
-      Kom *nowyKom = malloc(sizeof(Kom));
-      nowyKom->ileSasiadow = 2;
-      nowyKom->kolumna = (akt->kolumna) + 1;
-      nowyKom->next = next;
-      akt->next = nowyKom;
+      if (akt->ileSasiadow >= 10 || next->ileSasiadow) {
+        Kom *nowyKom = malloc(sizeof(Kom));
+        if (akt->ileSasiadow >= 10 && next->ileSasiadow >= 10) {
+          nowyKom->ileSasiadow = 2;
+        } else if (akt->ileSasiadow >= 10 || next->ileSasiadow >= 10) {
+          nowyKom->ileSasiadow = 1;
+        } else {
+          nowyKom->ileSasiadow = 0;
+        }
+        nowyKom->kolumna = (akt->kolumna) + 1;
+        nowyKom->next = next;
+        akt->next = nowyKom;
+      } else {
+        akt = next;
+        next = next->next;
+      }
     }
     if (akt->kolumna + 2 < next->kolumna) {
-      Kom *nowyKom1 = malloc(sizeof(Kom));
-      nowyKom1->ileSasiadow = 1;
-      nowyKom1->kolumna = next->kolumna - 1;
-      nowyKom1->next = next;
-      Kom *nowyKom2 = malloc(sizeof(Kom));
-      nowyKom2->ileSasiadow = 1;
-      nowyKom2->kolumna = akt->kolumna + 1;
-      nowyKom2->next = nowyKom1;
-      akt->next = nowyKom2;
+      if (next->ileSasiadow >= 10 && akt->ileSasiadow >= 10) {
+        Kom *nowyKom1 = malloc(sizeof(Kom));
+        Kom *nowyKom2 = malloc(sizeof(Kom));
+        nowyKom1->kolumna = next->kolumna - 1;
+        nowyKom1->ileSasiadow = 1;
+        nowyKom2->kolumna = akt->kolumna + 1;
+        nowyKom2->ileSasiadow = 1;
+        akt->next = nowyKom1;
+        nowyKom1->next = nowyKom2;
+        nowyKom2->next = next;
+        akt = nowyKom2;
+      } else if (akt->ileSasiadow >= 10) {
+        Kom *nowyKom = malloc(sizeof(Kom));
+        nowyKom->kolumna = akt->kolumna + 1;
+        akt->next = nowyKom;
+        nowyKom->next = next;
+        nowyKom->ileSasiadow = 1;
+        akt = nowyKom;
+      } else if (next->ileSasiadow >= 10) {
+        Kom *nowyKom = malloc(sizeof(Kom));
+        nowyKom->kolumna = next->kolumna - 1;
+        akt->next = nowyKom;
+        nowyKom->next = next;
+        nowyKom->ileSasiadow = 1;
+        akt = nowyKom;
+      }
     }
     akt = next;
     next = next->next;
   }
-  Kom *nowyKom = malloc(sizeof(Kom));
-  nowyKom->ileSasiadow = 1;
-  nowyKom->kolumna = akt->kolumna + 1;
-  nowyKom->next = NULL;
-  akt->next = nowyKom;
+  if (akt->ileSasiadow >= 10) {
+    Kom *nowyKom = malloc(sizeof(Kom));
+    nowyKom->ileSasiadow = 1;
+    nowyKom->kolumna = akt->kolumna + 1;
+    nowyKom->next = NULL;
+    akt->next = nowyKom;
+  }
 }
 
 /* Funkcja zliczająca sąsiadow wystepujacych w dolnym
@@ -419,9 +497,9 @@ void dodajMartweWeWierszu(Kom *aktKom, Kom *przedostatniKom, Kom *ostatniKom) {
         nowyKom2->kolumna = aktKom->kolumna;
         nowyKom3->kolumna = aktKom->kolumna + 1;
 
-        nowyKom1->ileSasiadow = 1;
-        nowyKom2->ileSasiadow = 1;
-        nowyKom3->ileSasiadow = 1;
+        nowyKom1->ileSasiadow = 0;
+        nowyKom2->ileSasiadow = 0;
+        nowyKom3->ileSasiadow = 0;
 
         przedostatniKom = nowyKom2;
         ostatniKom = nowyKom3;
@@ -440,9 +518,8 @@ void dodajMartweWeWierszu(Kom *aktKom, Kom *przedostatniKom, Kom *ostatniKom) {
         nowyKom1->kolumna = aktKom->kolumna;
         nowyKom2->kolumna = aktKom->kolumna + 1;
 
-        (ostatniKom->ileSasiadow)++;
-        nowyKom1->ileSasiadow = 1;
-        nowyKom2->ileSasiadow = 1;
+        nowyKom1->ileSasiadow = 0;
+        nowyKom2->ileSasiadow = 0;
 
         przedostatniKom = nowyKom1;
         ostatniKom = nowyKom2;
@@ -459,13 +536,10 @@ void dodajMartweWeWierszu(Kom *aktKom, Kom *przedostatniKom, Kom *ostatniKom) {
 
         nowyKom1->kolumna = aktKom->kolumna + 1;
 
-        nowyKom1->ileSasiadow = 1;
-        (przedostatniKom->ileSasiadow)++;
-        (ostatniKom->ileSasiadow)++;
+        nowyKom1->ileSasiadow = 0;
 
         przedostatniKom = ostatniKom;
         ostatniKom = nowyKom1;
-        przedostatniKom->next = ostatniKom;
       }
     }
     aktKom = aktKom->next;
@@ -488,8 +562,7 @@ void stworzWierszZMartwymi(KomWiersz *prevWiersz, KomWiersz *nextWiersz,
     aktKom = prevWiersz->nextKom;
   }
 
-  Kom *atrapaKom = malloc(sizeof(Kom));
-  Kom *przedostatniKom = atrapaKom;
+  Kom *przedostatniKom = malloc(sizeof(Kom));
   Kom *ostatniKom = malloc(sizeof(Kom));
 
   przedostatniKom->next = ostatniKom;
@@ -543,34 +616,6 @@ void zmienWierszZMartwymiSasiadami(Kom *pierwszyKom1, Kom *pierwszyKom2) {
   }
 }
 
-void zmienWierszZZywymiSasiadami(Kom *pierwszyKom1, Kom *pierwszyKom2) {
-  if (pierwszyKom1 == NULL || pierwszyKom2 == NULL)
-    return;
-  Kom *akt1 = pierwszyKom1;
-  Kom *akt2 = pierwszyKom2;
-  Kom *temp = akt2;
-  while (akt1 != NULL && akt2 != NULL) {
-    if (akt1->ileSasiadow >= 10) {
-      if (akt2->kolumna > (akt1->kolumna + 1)) {
-        akt1 = akt1->next;
-        akt2 = temp;
-      } else if (akt2->kolumna < (akt1->kolumna - 1)) {
-        akt2 = akt2->next;
-        temp = akt2;
-      } else {
-        (akt2->ileSasiadow)++;
-        akt2 = akt2->next;
-        if (akt2 == NULL) {
-          akt1 = akt1->next;
-          akt2 = temp;
-        }
-      }
-    } else {
-      akt1 = akt1->next;
-    }
-  }
-}
-
 KomWiersz *ozywGorne(KomWiersz *listaKomorekHead) {
   if (listaKomorekHead == NULL)
     return NULL;
@@ -578,6 +623,7 @@ KomWiersz *ozywGorne(KomWiersz *listaKomorekHead) {
   KomWiersz *prevWiersz = malloc(sizeof(KomWiersz));
   prevWiersz->nextKomWiersz = aktWiersz;
   prevWiersz->wiersz = aktWiersz->wiersz - 2;
+  prevWiersz->nextKom = NULL;
   KomWiersz *atrapaWiersz = prevWiersz;
   while (aktWiersz != NULL) {
     if (prevWiersz->wiersz != aktWiersz->wiersz - 1) {
@@ -618,11 +664,21 @@ void ozywDolne(KomWiersz *listaKomorekHead) {
     }
   }
   if (aktWiersz->wszystkieZywe == 1) {
-    KomWiersz *atrapaWiersz = malloc(sizeof(KomWiersz));
-    aktWiersz->nextKomWiersz = atrapaWiersz;
-    stworzWierszZMartwymi(aktWiersz, atrapaWiersz, 1);
-    (aktWiersz->nextKomWiersz)->nextKomWiersz = NULL;
-    free(atrapaWiersz);
+    KomWiersz *ostatniWiersz = malloc(sizeof(KomWiersz));
+    ostatniWiersz->wszystkieZywe = 0;
+    aktWiersz->nextKomWiersz = ostatniWiersz;
+    ostatniWiersz->wiersz = aktWiersz->wiersz + 1;
+    Kom *przedostatniKom = malloc(sizeof(Kom));
+    Kom *ostatniKom = malloc(sizeof(Kom));
+    ostatniWiersz->nextKom = przedostatniKom;
+    ostatniWiersz->nextKomWiersz = NULL;
+    przedostatniKom->next = ostatniKom;
+    ostatniKom->next = NULL;
+    przedostatniKom->ileSasiadow = 0;
+    ostatniKom->ileSasiadow = 0;
+    przedostatniKom->kolumna = aktWiersz->nextKom->kolumna;
+    ostatniKom->kolumna = aktWiersz->nextKom->kolumna + 1;
+    dodajMartweWeWierszu(aktWiersz->nextKom, przedostatniKom, ostatniKom);
   }
 }
 
@@ -635,66 +691,39 @@ KomWiersz *stworzNastepnaGeneracja(KomWiersz *listaKomorekHead) {
     return NULL;
   KomWiersz *listaKomorek = listaKomorekHead;
   while (listaKomorek->nextKomWiersz != NULL) {
-    stworzMartwe(listaKomorek->nextKomWiersz, listaKomorek->nextKom,
-                 listaKomorek->nextKomWiersz->nextKom);
-    stworzMartwe(listaKomorek, listaKomorek->nextKomWiersz->nextKom,
-                 listaKomorek->nextKom);
+    if (listaKomorek->wiersz == listaKomorek->nextKomWiersz->wiersz - 1) {
+      stworzMartwe(listaKomorek->nextKomWiersz, listaKomorek->nextKom,
+                   listaKomorek->nextKomWiersz->nextKom);
+      stworzMartwe(listaKomorek, listaKomorek->nextKomWiersz->nextKom,
+                   listaKomorek->nextKom);
+    }
     listaKomorek = listaKomorek->nextKomWiersz;
   }
 
   listaKomorek = listaKomorekHead;
 
-  // while (listaKomorek != NULL) {
-  //   zliczSasiadowWeWierszuAktualnym(listaKomorek->nextKom);
-  //   listaKomorek = listaKomorek->nextKomWiersz;
-  // }
-
-  listaKomorek = listaKomorekHead;
   while (listaKomorek != NULL) {
-    printList(listaKomorek->nextKom);
+    zliczSasiadowWeWierszuAktualnym(listaKomorek->nextKom, listaKomorek);
     listaKomorek = listaKomorek->nextKomWiersz;
   }
-  printf("zliczSasiadowWeWierszuAktualnym\n");
   listaKomorek = listaKomorekHead;
 
-  // if (listaKomorek != NULL) {
-  //   while (listaKomorek->nextKomWiersz != NULL) {
-  //     if (listaKomorek->wiersz == (listaKomorek->nextKomWiersz)->wiersz - 1)
-  //     {
-  //       zliczSasiadowWeWierszuDolnym(listaKomorek->nextKom,
-  //                                    (listaKomorek->nextKomWiersz)->nextKom);
-  //     }
-  //     listaKomorek = listaKomorek->nextKomWiersz;
-  //   }
-  // }
-
-  listaKomorek = listaKomorekHead;
-  while (listaKomorek != NULL) {
-    printList(listaKomorek->nextKom);
-    listaKomorek = listaKomorek->nextKomWiersz;
-  }
-  printf("zliczSasiadowWeWierszuDolnym\n");
-  listaKomorek = listaKomorekHead;
-
-  // listaKomorek = ozywGorne(listaKomorek);
+  listaKomorek = ozywGorne(listaKomorek);
   listaKomorekHead = listaKomorek;
 
-  // while (listaKomorek != NULL) {
-  //   printList(listaKomorek->nextKom);
-  //   listaKomorek = listaKomorek->nextKomWiersz;
-  // }
-  printf("ozywGorne\n");
+  ozywDolne(listaKomorek);
   listaKomorek = listaKomorekHead;
 
-  // ozywDolne(listaKomorek);
+  if (listaKomorek != NULL) {
+    while (listaKomorek->nextKomWiersz != NULL) {
+      if (listaKomorek->wiersz == (listaKomorek->nextKomWiersz)->wiersz - 1) {
+        zliczSasiadowWeWierszuDolnym(listaKomorek->nextKom,
+                                     (listaKomorek->nextKomWiersz)->nextKom);
+      }
+      listaKomorek = listaKomorek->nextKomWiersz;
+    }
+  }
   listaKomorek = listaKomorekHead;
-  // while (listaKomorek != NULL && listaKomorek->nextKom != NULL) {
-  //   printList(listaKomorek->nextKom);
-  //   listaKomorek = listaKomorek->nextKomWiersz;
-  // }
-  printf("Dolne\n");
-  listaKomorek = listaKomorekHead;
-
   return listaKomorek;
 }
 
@@ -738,6 +767,7 @@ KomWiersz *usunMartweKomorki(KomWiersz *listaKomorekHead) {
           aktKom = aktKom->next;
           free(usun);
         } else {
+          aktKom->ileSasiadow = 10;
           prevKom = aktKom;
           aktKom = aktKom->next;
         }
@@ -755,36 +785,32 @@ int main() {
   /* Poczatkowe wspolrzedne okienka */
   int w = 1;
   int k = 1;
-
-  /* Wykorzystywane do odczytu i zrozumienia danych wejsciowych */
-  char c1 = '0';
-  char c2 = '1';
   while (1) {
     drukujOkienko(w, k, listaKomorek);
-    c1 = getchar();
-    if (c1 == '\n') {
-      if (listaKomorek == NULL)
-        continue;
-      listaKomorek = stworzNastepnaGeneracja(listaKomorek);
-      listaKomorek = usunMartweKomorki(listaKomorek);
+    char c1 = getchar();
+    if (c1 == '.') {
+      if (listaKomorek != NULL) {
+        zwolnijPamiec(listaKomorek);
+        return 0;
+      }
+    } else if (c1 == '\n') {
+      if (listaKomorek != NULL) {
+        listaKomorek = stworzNastepnaGeneracja(listaKomorek);
+        listaKomorek = usunMartweKomorki(listaKomorek);
+      }
     } else {
-      c2 = getchar();
+      ungetc(c1, stdin);
+      int x;
+      scanf("%d", &x);
+      char c2 = getchar();
       if (c2 == ' ') {
-        char c3 = getchar();
-        w = c1;
-        k = c3;
-      } else if (c2 == '\n') {
-        if (c1 == '.') {
-          ;
+        ungetc(c2, stdin);
+        scanf("%d", &k);
+        w = x;
+        x = getchar();
+      } else {
+        for (int i = 0; i < x; i++) {
           if (listaKomorek != NULL) {
-            zwolnijPamiec(listaKomorek);
-            return 0;
-          }
-        } else if (c1 == '0') {
-          continue;
-        } else if (listaKomorek != NULL) {
-          int n = c1 - '0';
-          for (int i = 0; i < n; i++) {
             listaKomorek = stworzNastepnaGeneracja(listaKomorek);
             listaKomorek = usunMartweKomorki(listaKomorek);
           }
