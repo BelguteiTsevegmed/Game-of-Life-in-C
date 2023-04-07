@@ -1,3 +1,23 @@
+/**
+ * "Gra w zycie" Conway'a
+ *
+ * Zlozonosc czasowa: O(N)
+ * Zlozonosc pamieciowa: O(N)
+ * gdzie N to liczba zywych komorek
+ *
+ * Program:
+ * Zczytuje input gracza i:
+ * - jeśli to będzie pojedyncza liczba to pokazuje te generacje
+ * - jeśli to bedzie enter to pokazuje nastepna generacje
+ * - jeśli to bedzie 0, to pokazuje aktualny stan planszy
+ * - jeśli to beda dwie liczby, to pokazuje odpowiednią czesc planszy, gdzie te
+ * dwie liczby sa wspolrzednymi lewego, gornego rogu planszy
+ * - jeśli to bedzie kropka, to konczy dzialanie programu
+ *
+ * autor: Belgutei Tsevegmed
+ * data: 30 marca 2023 r.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,7 +222,7 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
     akt = akt->next;
   }
   int roznica = przedostatni->kolumna - akt->kolumna;
-  if (akt->kolumna < przedostatni->kolumna) {
+  if (akt->kolumna <= przedostatni->kolumna) {
     if (roznica > 1) {
       Kom *nowyKom1 = malloc(sizeof(Kom));
       Kom *nowyKom2 = malloc(sizeof(Kom));
@@ -231,7 +251,7 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
       nowyKom2->ileSasiadow = 0;
       przedostatni = nowyKom1;
       ostatni = przedostatni->next;
-    } else {
+    } else if (roznica == 0) {
       Kom *nowyKom1 = malloc(sizeof(Kom));
       wierszHead->nextKom = nowyKom1;
       nowyKom1->next = przedostatni;
@@ -242,6 +262,7 @@ void stworzMartwe(KomWiersz *wierszHead, Kom *kom1, Kom *kom2) {
     }
     akt = akt->next;
   }
+  akt = kom1;
   if (akt == NULL)
     return;
   while (akt != NULL && ostatni != NULL) {
@@ -552,9 +573,15 @@ void dodajMartweWeWierszu(Kom *aktKom, Kom *przedostatniKom, Kom *ostatniKom) {
  */
 void stworzWierszZMartwymi(KomWiersz *prevWiersz, KomWiersz *nextWiersz,
                            int i) {
-  if (prevWiersz == NULL || nextWiersz == NULL || prevWiersz->nextKom == NULL ||
-      nextWiersz->nextKom == NULL)
+  if (prevWiersz == NULL || nextWiersz == NULL)
     return;
+  if (i < 0) {
+    if (nextWiersz->nextKom == NULL)
+      return;
+  } else {
+    if (prevWiersz->nextKom == NULL)
+      return;
+  }
   Kom *aktKom = NULL;
   if (i < 0) {
     aktKom = nextWiersz->nextKom;
@@ -580,7 +607,6 @@ void stworzWierszZMartwymi(KomWiersz *prevWiersz, KomWiersz *nextWiersz,
   } else {
     nowyWiersz->wiersz = (prevWiersz->wiersz) + i;
   }
-
   nowyWiersz->wszystkieZywe = 0;
   nowyWiersz->nextKom = przedostatniKom;
 
@@ -676,8 +702,8 @@ void ozywDolne(KomWiersz *listaKomorekHead) {
     ostatniKom->next = NULL;
     przedostatniKom->ileSasiadow = 0;
     ostatniKom->ileSasiadow = 0;
-    przedostatniKom->kolumna = aktWiersz->nextKom->kolumna;
-    ostatniKom->kolumna = aktWiersz->nextKom->kolumna + 1;
+    przedostatniKom->kolumna = aktWiersz->nextKom->kolumna - 1;
+    ostatniKom->kolumna = aktWiersz->nextKom->kolumna;
     dodajMartweWeWierszu(aktWiersz->nextKom, przedostatniKom, ostatniKom);
   }
 }
@@ -755,8 +781,7 @@ KomWiersz *usunMartweKomorki(KomWiersz *listaKomorekHead) {
       Kom *aktKom = aktKomWiersz->nextKom;
       Kom *prevKom = NULL;
       while (aktKom != NULL) {
-        // printf("%d", aktKom->ileSasiadow);
-        if (aktKom->ileSasiadow != 2 && aktKom->ileSasiadow != 3 &&
+        if (aktKom->ileSasiadow != 12 && aktKom->ileSasiadow != 3 &&
             aktKom->ileSasiadow != 13) {
           if (prevKom != NULL) {
             prevKom->next = aktKom->next;
@@ -772,9 +797,27 @@ KomWiersz *usunMartweKomorki(KomWiersz *listaKomorekHead) {
           aktKom = aktKom->next;
         }
       }
+      if (aktKomWiersz->nextKom != NULL) {
+        aktKomWiersz->wszystkieZywe = 1;
+      } else {
+      }
     }
-    prevKomWiersz = aktKomWiersz;
-    aktKomWiersz = aktKomWiersz->nextKomWiersz;
+    if (aktKomWiersz->nextKom == NULL) {
+      if (prevKomWiersz == NULL) {
+        nowyHead = aktKomWiersz->nextKomWiersz;
+        free(aktKomWiersz);
+        aktKomWiersz = nowyHead;
+      } else {
+        prevKomWiersz->nextKomWiersz = aktKomWiersz->nextKomWiersz;
+        free(aktKomWiersz);
+        aktKomWiersz = prevKomWiersz->nextKomWiersz;
+      }
+      if (aktKomWiersz == NULL)
+        return nowyHead;
+    } else {
+      prevKomWiersz = aktKomWiersz;
+      aktKomWiersz = aktKomWiersz->nextKomWiersz;
+    }
   }
   return nowyHead;
 }
